@@ -1,0 +1,5 @@
+nimare==0.0.8
+matplotlib
+duecredit
+jupyter
+jupytext
