@@ -168,6 +168,46 @@ mc_results.maps
 plotting.plot_stat_map(mc_results.get_map("z_level-cluster_corr-FWE_method-montecarlo"))
 ```
 
+### Image-based meta-analysis
+
+```python
+pain_dset.images.head()
+```
+
+```python
+# Calculate missing images
+pain_dset.images = nimare.transforms.transform_images(
+    pain_dset.images,
+    target="z",
+    masker=pain_dset.masker,
+    metadata_df=pain_dset.metadata,
+)
+pain_dset.images = nimare.transforms.transform_images(
+    pain_dset.images,
+    target="varcope",
+    masker=pain_dset.masker,
+    metadata_df=pain_dset.metadata,
+)
+```
+
+```python
+dsl_meta = nimare.meta.ibma.DerSimonianLaird()
+dsl_results = dsl_meta.fit(pain_dset)
+```
+
+```python
+plotting.plot_stat_map(dsl_results.get_map("z"))
+```
+
+```python
+ols_meta = nimare.meta.ibma.PermutedOLS()
+ols_results = ols_meta.fit(pain_dset)
+```
+
+```python
+plotting.plot_stat_map(ols_results.get_map("z"))
+```
+
 ```python
 
 ```
