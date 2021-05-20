@@ -1,5 +1,5 @@
 nimare==0.0.8
-matplotlib
-duecredit
-jupyter
-jupytext
+matplotlib==3.4.2
+duecredit==0.9.1
+jupyter==1.0.0
+jupytext==1.11.2
