@@ -18,18 +18,24 @@ jupyter:
 ```python
 %matplotlib inline
 import json
-import matplotlib.pyplot as plt
-from nilearn import plotting
+import os.path as op
 from pprint import pprint
 
+import matplotlib.pyplot as plt
+from nilearn import plotting
+
 import nimare
+```
+
+```python
+DATA_DIR = op.abspath("../data/nimare_tutorial/")
 ```
 
 ## Basics of NiMARE datasets
 NiMARE relies on a specification for meta-analytic datasets named [NIMADS](https://github.com/neurostuff/NIMADS). NIMADS is currently under development.
 
 ```python
-with open("data/nidm_pain_dset.json", "r") as fo:
+with open(op.join(DATA_DIR, "nidm_pain_dset.json"), "r") as fo:
     data = json.load(fo)
 
 reduced_data = {k: v for k, v in data.items() if k in list(data.keys())[:2]}
@@ -38,8 +44,8 @@ pprint(reduced_data)
 ```
 
 ```python
-dset_dir = nimare.extract.download_nidm_pain(data_dir="data/")
-pain_dset = nimare.dataset.Dataset("data/nidm_pain_dset.json")
+dset_dir = nimare.extract.download_nidm_pain(data_dir=DATA_DIR)
+pain_dset = nimare.dataset.Dataset(op.join(DATA_DIR, "nidm_pain_dset.json"))
 pain_dset.update_path(dset_dir)
 ```
 
@@ -72,11 +78,11 @@ ns_dset = nimare.io.convert_neurosynth_to_dataset(
 <!-- #endregion -->
 
 ```python
-ns_dset = nimare.dataset.Dataset.load("data/neurosynth_dataset.pkl.gz")
+ns_dset = nimare.dataset.Dataset.load(op.join(DATA_DIR, "neurosynth_dataset.pkl.gz"))
 ```
 
 ```python
-sleuth_dset = nimare.io.convert_sleuth_to_dataset("data/sleuth_dataset.txt")
+sleuth_dset = nimare.io.convert_sleuth_to_dataset(op.join(DATA_DIR, "sleuth_dataset.txt"))
 ```
 
 ## Searching large datasets
