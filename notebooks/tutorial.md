@@ -6,7 +6,7 @@ jupyter:
       extension: .md
       format_name: markdown
       format_version: '1.3'
-      jupytext_version: 1.10.1
+      jupytext_version: 1.11.2
   kernelspec:
     display_name: Python 3
     language: python
@@ -17,10 +17,10 @@ jupyter:
 
 ## Goals
 
-- Working with NiMARE meta-analytic datasets
-- Searching large datasets
-- Performing coordinate-based meta-analyses
-- Performing image-based meta-analyses
+1. Working with NiMARE meta-analytic datasets
+1. Searching large datasets
+1. Performing coordinate-based meta-analyses
+1. Performing image-based meta-analyses
 
 ```python
 %matplotlib inline
@@ -166,67 +166,56 @@ Most coordinate-based meta-analysis algorithms are kernel-based, in that they co
 NiMARE includes classes for different kernel transformers, which accept Datasets and generate the images resulting from convolving each study's peaks with the associated kernel.
 
 ```python
-mkda_kernel = nimare.meta.kernel.MKDAKernel(r=10)
-mkda_ma_maps = mkda_kernel.transform(sleuth_dset, return_type="image")
-kda_kernel = nimare.meta.kernel.KDAKernel(r=10)
-kda_ma_maps = kda_kernel.transform(sleuth_dset, return_type="image")
-ale_kernel = nimare.meta.kernel.ALEKernel(sample_size=20)
-ale_ma_maps = ale_kernel.transform(sleuth_dset, return_type="image")
-
-# Let's show the kernels
+# Create a figure
 fig, axes = plt.subplots(ncols=3, figsize=(20, 5))
-plotting.plot_stat_map(
-    mkda_ma_maps[28],
-    annotate=False,
-    axes=axes[0],
-    cmap="Reds",
-    cut_coords=[30, -30, -14],
-    draw_cross=False,
-    figure=fig,
-    title="MKDA Kernel",
-)
-plotting.plot_stat_map(
-    kda_ma_maps[28],
-    annotate=False,
-    axes=axes[1],
-    cmap="Reds",
-    cut_coords=[30, -30, -14],
-    draw_cross=False,
-    figure=fig,
-    title="KDA Kernel",
-)
-plotting.plot_stat_map(
-    ale_ma_maps[28],
-    annotate=False,
-    axes=axes[2],
-    cmap="Reds",
-    cut_coords=[30, -30, -14],
-    draw_cross=False,
-    figure=fig,
-    title="ALE Kernel",
-)
+
+# Apply different kernel transformers to the same Dataset
+kernels = {
+    nimare.meta.kernel.MKDAKernel(r=10),
+    nimare.meta.kernel.KDAKernel(r=10),
+    nimare.meta.kernel.ALEKernel(sample_size=20),
+}
+
+for i_kernel, kernel in enumerate(kernels):
+    ma_maps = kernel.transform(sleuth_dset, return_type="image")
+
+    # Plot the kernel
+    plotting.plot_stat_map(
+        ma_maps[28],
+        annotate=False,
+        axes=axes[i_kernel],
+        cmap="Reds",
+        cut_coords=[30, -30, -14],
+        draw_cross=False,
+        figure=fig,
+        title=type(kernel),
+    )
+
+# Show the overall figure
 fig.show()
 ```
 
 Meta-analytic Estimators are initialized with parameters which determine how the Estimator will be run. For example, ALE accepts a kernel transformer (which defaults to the standard `ALEKernel`), a null method, the number of iterations used to define the null distribution, and the number of cores to be used during fitting.
 
-The Estimators also have a `fit` method, which accepts a `Dataset` object and returns a `MetaResults` object. [`MetaResults`](https://nimare.readthedocs.io/en/latest/generated/nimare.results.MetaResult.html#nimare.results.MetaResult) link statistical image names to numpy arrays, and can be used to produce nibabel images from those arrays, as well as save the images to files.
+The Estimators also have a `fit` method, which accepts a `Dataset` object and returns a `MetaResult` object. [`MetaResult`s](https://nimare.readthedocs.io/en/latest/generated/nimare.results.MetaResult.html#nimare.results.MetaResult) link statistical image names to numpy arrays, and can be used to produce nibabel images from those arrays, as well as save the images to files.
 
 ```python
-ale_meta = nimare.meta.cbma.ale.ALE(null_method="approximate")
-ale_results = ale_meta.fit(sleuth_dset)
+meta = nimare.meta.cbma.ale.ALE(null_method="approximate")
+meta_results = meta.fit(sleuth_dset)
 ```
 
 ```python
-print(type(ale_results))
+print(type(meta_results))
 ```
 
 ```python
-ale_results.maps
+print(type(meta_results.maps))
+print("Available maps:")
+print("\t- " + "\n\t- ".join(meta_results.maps.keys()))
 ```
 
 ```python
-z_img = ale_results.get_map("z")
+z_img = meta_results.get_map("z")
 print(type(z_img))
 ```
 
@@ -236,11 +225,11 @@ plotting.plot_stat_map(z_img)
 
 ### Multiple comparisons correction
 
-Most of the time, you will want to follow up your meta-analysis with some form of multiple comparisons correction. For this, NiMARE provides Corrector classes in the `correct` module. Specifically, there are two Correctors: `FWECorrector` and `FDRCorrector`. In both cases, the Corrector supports a range of naive correction options relying on [`statsmodels`' methods](https://www.statsmodels.org/dev/generated/statsmodels.stats.multitest.multipletests.html).
+Most of the time, you will want to follow up your meta-analysis with some form of multiple comparisons correction. For this, NiMARE provides Corrector classes in the `correct` module. Specifically, there are two Correctors: [`FWECorrector`](https://nimare.readthedocs.io/en/latest/generated/nimare.correct.FWECorrector.html) and [`FDRCorrector`](https://nimare.readthedocs.io/en/latest/generated/nimare.correct.FDRCorrector.html). In both cases, the Corrector supports a range of naive correction options relying on [`statsmodels`' methods](https://www.statsmodels.org/dev/generated/statsmodels.stats.multitest.multipletests.html).
 
 In addition to generic multiple comparisons correction, the Correctors also reference algorithm-specific correction methods, such as the `montecarlo` method supported by most coordinate-based meta-analysis algorithms.
 
-Correctors are initialized with parameters, and they have a `transform` method that accepts a `MetaResults` object and returns an updated one with the corrected maps.
+Correctors are initialized with parameters, and they have a `transform` method that accepts a `MetaResult` object and returns an updated one with the corrected maps.
 
 ```python
 mc_corrector = nimare.correct.FWECorrector(
@@ -248,11 +237,13 @@ mc_corrector = nimare.correct.FWECorrector(
     n_iters=100, 
     n_cores=1,
 )
-mc_results = mc_corrector.transform(ale_results)
+mc_results = mc_corrector.transform(meta_results)
 ```
 
 ```python
-mc_results.maps
+print(type(mc_results.maps))
+print("Available maps:")
+print("\t- " + "\n\t- ".join(mc_results.maps.keys()))
 ```
 
 ```python
@@ -291,39 +282,41 @@ pain_dset.images.head()
 
 Now that we have all of the image types we will need for our meta-analyses, we can run a couple of image-based meta-analysis types.
 
-The DerSimonianLaird method uses "beta" and "varcope" images, and estimates between-study variance (a.k.a. $\tau^2$).
+The `DerSimonianLaird` method uses "beta" and "varcope" images, and estimates between-study variance (a.k.a. $\tau^2$).
 
 ```python
-dsl_meta = nimare.meta.ibma.DerSimonianLaird()
-dsl_results = dsl_meta.fit(pain_dset)
+meta = nimare.meta.ibma.DerSimonianLaird()
+meta_results = meta.fit(pain_dset)
 ```
 
 ```python
-plotting.plot_stat_map(dsl_results.get_map("z"))
+plotting.plot_stat_map(meta_results.get_map("z"))
 ```
 
-The PermutedOLS method uses z-statistic images, and relies on [nilearn's permuted_ols](https://nilearn.github.io/modules/generated/nilearn.mass_univariate.permuted_ols.html) tool.
+The `PermutedOLS` method uses z-statistic images, and relies on [nilearn's `permuted_ols`](https://nilearn.github.io/modules/generated/nilearn.mass_univariate.permuted_ols.html) tool.
 
 ```python
-ols_meta = nimare.meta.ibma.PermutedOLS()
-ols_results = ols_meta.fit(pain_dset)
-```
-
-```python
-plotting.plot_stat_map(ols_results.get_map("z"))
+meta = nimare.meta.ibma.PermutedOLS()
+meta_results = meta.fit(pain_dset)
 ```
 
 ```python
-ols_corrector = nimare.correct.FWECorrector(method="montecarlo", n_iters=100)
-ols_corrected_results = ols_corrector.transform(ols_results)
+plotting.plot_stat_map(meta_results.get_map("z"))
 ```
 
 ```python
-ols_corrected_results.maps
+mc_corrector = nimare.correct.FWECorrector(method="montecarlo", n_iters=100)
+mc_results = mc_corrector.transform(meta_results)
 ```
 
 ```python
-plotting.plot_stat_map(ols_corrected_results.get_map("z_level-voxel_corr-FWE_method-montecarlo"))
+print(type(mc_results.maps))
+print("Available maps:")
+print("\t- " + "\n\t- ".join(mc_results.maps.keys()))
+```
+
+```python
+plotting.plot_stat_map(mc_results.get_map("z_level-voxel_corr-FWE_method-montecarlo"))
 ```
 
 ```python
