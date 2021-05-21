@@ -15,6 +15,8 @@ jupyter:
 
 # OHBM 2021 NiMARE tutorial
 
+## What is NiMARE?
+
 ## Goals
 
 1. Working with NiMARE meta-analytic datasets
@@ -29,7 +31,7 @@ import os.path as op
 from pprint import pprint
 
 import matplotlib.pyplot as plt
-from nilearn import plotting
+from nilearn import plotting, reporting
 
 import nimare
 ```
@@ -131,10 +133,12 @@ ns_dset = nimare.io.convert_neurosynth_to_dataset(
 
 ```python
 ns_dset = nimare.dataset.Dataset.load(op.join(DATA_DIR, "neurosynth_dataset.pkl.gz"))
+print(f"There are {len(ns_dset.ids)} studies in the Neurosynth database.")
 ```
 
 ```python
 sleuth_dset = nimare.io.convert_sleuth_to_dataset(op.join(DATA_DIR, "sleuth_dataset.txt"))
+print(f"There are {len(sleuth_dset.ids)} studies in this dataset.")
 ```
 
 ## Searching large datasets
@@ -148,6 +152,7 @@ The `slice` method creates a reduced `Dataset` from a list of IDs.
 ```python
 pain_ids = ns_dset.get_studies_by_label("Neurosynth_TFIDF__pain", label_threshold=0.001)
 ns_pain_dset = ns_dset.slice(pain_ids)
+print(f"There are {len(pain_ids)} studies labeled with 'pain'.")
 ```
 
 A MACM (meta-analytic coactivation modeling) analysis is generally performed by running a meta-analysis on studies with a peak in a region of interest, so Dataset includes two methods for searching based on the locations of coordinates: `Dataset.get_studies_by_coordinate` and `Dataset.get_studies_by_mask`.
@@ -155,6 +160,7 @@ A MACM (meta-analytic coactivation modeling) analysis is generally performed by 
 ```python
 sphere_ids = ns_dset.get_studies_by_coordinate([[24, -2, -20]], r=6)
 sphere_dset = ns_dset.slice(sphere_ids)
+print(f"There are {len(sphere_ids)} studies with at least one peak within 6mm of [24, -2, -20].")
 ```
 
 ## Running meta-analyses
@@ -170,22 +176,22 @@ NiMARE includes classes for different kernel transformers, which accept Datasets
 fig, axes = plt.subplots(ncols=3, figsize=(20, 5))
 
 # Apply different kernel transformers to the same Dataset
-kernels = {
+kernels = [
     nimare.meta.kernel.MKDAKernel(r=10),
     nimare.meta.kernel.KDAKernel(r=10),
     nimare.meta.kernel.ALEKernel(sample_size=20),
-}
+]
 
 for i_kernel, kernel in enumerate(kernels):
-    ma_maps = kernel.transform(sleuth_dset, return_type="image")
+    ma_maps = kernel.transform(pain_dset, return_type="image")
 
     # Plot the kernel
     plotting.plot_stat_map(
-        ma_maps[28],
+        ma_maps[0],
         annotate=False,
         axes=axes[i_kernel],
         cmap="Reds",
-        cut_coords=[30, -30, -14],
+        cut_coords=[0, 0, -24],
         draw_cross=False,
         figure=fig,
         title=type(kernel),
@@ -201,7 +207,7 @@ The Estimators also have a `fit` method, which accepts a `Dataset` object and re
 
 ```python
 meta = nimare.meta.cbma.ale.ALE(null_method="approximate")
-meta_results = meta.fit(sleuth_dset)
+meta_results = meta.fit(pain_dset)
 ```
 
 ```python
@@ -220,7 +226,11 @@ print(type(z_img))
 ```
 
 ```python
-plotting.plot_stat_map(z_img)
+plotting.plot_stat_map(
+    z_img,
+    draw_cross=False,
+    cut_coords=[0, 0, 0],
+)
 ```
 
 ### Multiple comparisons correction
@@ -234,10 +244,13 @@ Correctors are initialized with parameters, and they have a `transform` method t
 ```python
 mc_corrector = nimare.correct.FWECorrector(
     method="montecarlo", 
-    n_iters=100, 
+    n_iters=100,
     n_cores=1,
 )
 mc_results = mc_corrector.transform(meta_results)
+
+# Let's store the CBMA result for later
+cbma_z_img = mc_results.get_map("z_level-cluster_corr-FWE_method-montecarlo")
 ```
 
 ```python
@@ -247,7 +260,15 @@ print("\t- " + "\n\t- ".join(mc_results.maps.keys()))
 ```
 
 ```python
-plotting.plot_stat_map(mc_results.get_map("z_level-cluster_corr-FWE_method-montecarlo"))
+plotting.plot_stat_map(
+    mc_results.get_map("z_level-cluster_corr-FWE_method-montecarlo"),
+    draw_cross=False,
+    cut_coords=[0, 0, 0],
+)
+```
+
+```python
+reporting.get_clusters_table(cbma_z_img, stat_threshold=1.65)
 ```
 
 ### Image-based meta-analysis
@@ -290,7 +311,11 @@ meta_results = meta.fit(pain_dset)
 ```
 
 ```python
-plotting.plot_stat_map(meta_results.get_map("z"))
+plotting.plot_stat_map(
+    meta_results.get_map("z"),
+    draw_cross=False,
+    cut_coords=[0, 0, 0],
+)
 ```
 
 The `PermutedOLS` method uses z-statistic images, and relies on [nilearn's `permuted_ols`](https://nilearn.github.io/modules/generated/nilearn.mass_univariate.permuted_ols.html) tool.
@@ -301,7 +326,11 @@ meta_results = meta.fit(pain_dset)
 ```
 
 ```python
-plotting.plot_stat_map(meta_results.get_map("z"))
+plotting.plot_stat_map(
+    meta_results.get_map("z"),
+    draw_cross=False,
+    cut_coords=[0, 0, 0],
+)
 ```
 
 ```python
@@ -316,7 +345,98 @@ print("\t- " + "\n\t- ".join(mc_results.maps.keys()))
 ```
 
 ```python
-plotting.plot_stat_map(mc_results.get_map("z_level-voxel_corr-FWE_method-montecarlo"))
+plotting.plot_stat_map(
+    mc_results.get_map("z_level-voxel_corr-FWE_method-montecarlo"),
+    draw_cross=False,
+    cut_coords=[0, 0, 0],
+)
+```
+
+```python
+reporting.get_clusters_table(
+    mc_results.get_map("z_level-voxel_corr-FWE_method-montecarlo"),
+    stat_threshold=1.65,
+    cluster_threshold=10,
+)
+```
+
+### Compare to results from the SPM IBMA extension
+
+![image.png](attachment:image.png)
+Adapted from [Maumet & Nichols (2014)](https://www.frontiersin.org/10.3389/conf.fninf.2014.18.00025/event_abstract).
+
+```python
+plotting.plot_stat_map(
+    mc_results.get_map("z_level-voxel_corr-FWE_method-montecarlo"),
+    threshold=1.65,
+    vmax=3,
+    draw_cross=False,
+    cut_coords=[0, 0, 0],
+)
+```
+
+```python
+plotting.plot_stat_map(
+    cbma_z_img,
+    threshold=1.65,
+    vmax=3,
+    draw_cross=False,
+    cut_coords=[0, 0, 0],
+)
+```
+
+## Exercise: Run a MACM and Decode an ROI
+
+```python
+ROI_FILE = op.join(DATA_DIR, "amygdala_roi.nii.gz")
+
+plotting.plot_roi(
+    ROI_FILE,
+    title="Anterior Cingular Gyrus",
+    draw_cross=False,
+)
+```
+
+```python
+# Given the sheer size of Neurosynth, we will only use the first 500 studies in this exercise
+ns_dset = ns_dset.slice(ns_dset.ids[:500])
+```
+
+```python
+# First, use the Dataset class's get_studies_by_mask method
+# to identify studies with at least one coordinate in the ROI.
+roi_studies = ns_dset.get_studies_by_mask(ROI_FILE)
+print(len(roi_studies))
+```
+
+```python
+# Now, create a reduced version of the Dataset including only
+# studies identified above.
+roi_dset = ns_dset.slice(roi_studies)
+```
+
+```python
+# Next, run a meta-analysis on the reduced ROI dataset.
+# This is a MACM.
+macm = nimare.meta.cbma.ale.ALE(kernel__sample_size=20)
+macm.fit(roi_dset)
+plotting.plot_stat_map(macm.results.get_map("z"))
+```
+
+```python
+# Initialize, fit, and transform a Neurosynth Decoder.
+decoder = nimare.decode.discrete.NeurosynthDecoder()
+decoder.fit(ns_dset)
+roi_dataframe = decoder.transform(ids=roi_studies)
+```
+
+```python
+# Show the results
+roi_dataframe
+```
+
+```python
+roi_dataframe.sort_values(by="pReverse", ascending=True).head(10)
 ```
 
 ```python
