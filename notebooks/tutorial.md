@@ -35,7 +35,7 @@ import nimare
 ```
 
 ```python
-DATA_DIR = op.abspath("../data/nimare_tutorial/")
+DATA_DIR = op.abspath("../data/nimare_tutorial/osfstorage/")
 ```
 
 ## Basics of NiMARE datasets
