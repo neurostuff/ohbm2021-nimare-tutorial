@@ -17,7 +17,9 @@ jupyter:
 
 ## What is NiMARE?
 
-## Goals
+[NiMARE](https://nimare.readthedocs.io/en/latest/) is a Python library for performing neuroimaging meta-analyses and related analyses, like automated annotation and functional decoding.
+
+## Goals for this tutorial
 
 1. Working with NiMARE meta-analytic datasets
 1. Searching large datasets
@@ -25,6 +27,7 @@ jupyter:
 1. Performing image-based meta-analyses
 
 ```python
+# Import the packages we'll need for this tutorial
 %matplotlib inline
 import json
 import os.path as op
@@ -40,23 +43,13 @@ import nimare
 DATA_DIR = op.abspath("../data/nimare_tutorial/osfstorage/")
 ```
 
-## Basics of NiMARE datasets
-NiMARE relies on a specification for meta-analytic datasets named [NIMADS](https://github.com/neurostuff/NIMADS).
+# Basics of NiMARE datasets
+NiMARE relies on a specification for meta-analytic datasets named [NIMADS](https://github.com/neurostuff/NIMADS). Under NIMADS, meta-analytic datasets are stored as JSON files, with information about peak coordinates, _relative_ links to any unthresholded statistical images, metadata, annotations, and raw text.
 
-Under NIMADS, meta-analytic datasets are stored as JSON files, with information about peak coordinates, _relative_ links to any unthresholded statistical images, metadata, annotations, and raw text.
+**NOTE**: NiMARE users generally do not need to create JSONs manually, so we won't go into that structure in this tutorial. Instead, users will typically have access to datasets stored in more established formats, like [Neurosynth](https://github.com/neurosynth/neurosynth-data) and [Sleuth](http://brainmap.org/sleuth/) files.
 
-**WARNING: NIMADS is currently under development.**
 
-```python
-with open(op.join(DATA_DIR, "nidm_pain_dset.json"), "r") as fo:
-    data = json.load(fo)
-
-reduced_data = {k: v for k, v in data.items() if k in list(data.keys())[:2]}
-
-pprint(reduced_data)
-```
-
-As a test Dataset containing both coordinates and images, we will load a NiMARE dataset created from [Collection 1425 on NeuroVault](https://identifiers.org/neurovault.collection:1425), which contains [NIDM-Results packs](http://nidm.nidash.org/specs/nidm-results_130.html) for 21 pain studies.
+We will start by loading a dataset in NIMADS format, because this particular dataset contains both coordinates and images. This dataset is created from [Collection 1425 on NeuroVault](https://identifiers.org/neurovault.collection:1425), which contains [NIDM-Results packs](http://nidm.nidash.org/specs/nidm-results_130.html) for 21 pain studies.
 
 ```python
 pain_dset = nimare.dataset.Dataset(op.join(DATA_DIR, "nidm_pain_dset.json"))
@@ -71,7 +64,7 @@ dset_dir = nimare.extract.download_nidm_pain(data_dir=DATA_DIR)
 pain_dset.update_path(dset_dir)
 ```
 
-The `Dataset` stores most relevant information as properties.
+In NiMARE, datasets are stored in a special `Dataset` class. The `Dataset` class stores most relevant information as properties.
 
 The full list of identifiers in the Dataset is located in `Dataset.ids`. Identifiers are composed of two parts- a study ID and a contrast ID. Within the Dataset, those two parts are separated with a `-`.
 
@@ -117,7 +110,17 @@ pain_dset.masker
 pain_dset.space
 ```
 
-There are functions to convert common formats for meta-analysis datasets- namely [Neurosynth](https://github.com/neurosynth/neurosynth-data) and [Sleuth](http://brainmap.org/sleuth/) files.
+<!-- #region -->
+Datasets can also be saved to, and loaded from, binarized (pickled) files.
+
+We cannot save files on Binder, so here is the code we would use to save the pain Dataset:
+
+```python
+pain_dset.save("pain_dataset.pkl.gz")
+```
+<!-- #endregion -->
+
+Now for a more common situation, where users want to use NiMARE on data from Neurosynth or a Sleuth file.
 
 <!-- #region -->
 Downloading and converting the Neurosynth dataset takes a long time, so we will use a pregenerated version of the dataset. However, here is the code we would use to download and convert the dataset from scratch:
@@ -163,9 +166,9 @@ sphere_dset = ns_dset.slice(sphere_ids)
 print(f"There are {len(sphere_ids)} studies with at least one peak within 6mm of [24, -2, -20].")
 ```
 
-## Running meta-analyses
+# Running meta-analyses
 
-### Coordinate-based meta-analysis
+## Coordinate-based meta-analysis
 
 Most coordinate-based meta-analysis algorithms are kernel-based, in that they convolve peaks reported in papers with a "kernel". Kernels are generally either binary spheres, as in multi-level kernel density analysis (MKDA), or 3D Gaussian distributions, as in activation likelihood estimation (ALE).
 
@@ -233,7 +236,7 @@ plotting.plot_stat_map(
 )
 ```
 
-### Multiple comparisons correction
+## Multiple comparisons correction
 
 Most of the time, you will want to follow up your meta-analysis with some form of multiple comparisons correction. For this, NiMARE provides Corrector classes in the `correct` module. Specifically, there are two Correctors: [`FWECorrector`](https://nimare.readthedocs.io/en/latest/generated/nimare.correct.FWECorrector.html) and [`FDRCorrector`](https://nimare.readthedocs.io/en/latest/generated/nimare.correct.FDRCorrector.html). In both cases, the Corrector supports a range of naive correction options relying on [`statsmodels`' methods](https://www.statsmodels.org/dev/generated/statsmodels.stats.multitest.multipletests.html).
 
@@ -268,10 +271,11 @@ plotting.plot_stat_map(
 ```
 
 ```python
+# Report a standard cluster table for the meta-analytic map using a threshold of p<0.05
 reporting.get_clusters_table(cbma_z_img, stat_threshold=1.65)
 ```
 
-### Image-based meta-analysis
+## Image-based meta-analysis
 
 ```python
 pain_dset.images
@@ -353,6 +357,7 @@ plotting.plot_stat_map(
 ```
 
 ```python
+# Report a standard cluster table for the meta-analytic map using a threshold of p<0.05
 reporting.get_clusters_table(
     mc_results.get_map("z_level-voxel_corr-FWE_method-montecarlo"),
     stat_threshold=1.65,
@@ -360,7 +365,7 @@ reporting.get_clusters_table(
 )
 ```
 
-### Compare to results from the SPM IBMA extension
+## Compare to results from the SPM IBMA extension
 
 ![image.png](attachment:image.png)
 Adapted from [Maumet & Nichols (2014)](https://www.frontiersin.org/10.3389/conf.fninf.2014.18.00025/event_abstract).
@@ -385,7 +390,26 @@ plotting.plot_stat_map(
 )
 ```
 
-## Exercise: Run a MACM and Decode an ROI
+# Meta-Analytic Functional Decoding
+
+Functional decoding refers to approaches which attempt to infer mental processes, tasks, etc. from imaging data. There are many approaches to functional decoding, but one set of approaches uses meta-analytic databases like Neurosynth or BrainMap, which we call "meta-analytic functional decoding." For more information on functional decoding in general, read [Poldrack (2011)](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3240863/).
+
+In NiMARE, we group decoding methods into three general types: discrete decoding, continuous decoding, and encoding.
+
+Discrete decoding methods use a meta-analytic database and annotations of studies in that database to describe something discrete (like a region of interest) in terms of those annotations.
+
+Continuous decoding methods use the same type of database to describe an unthresholded brain map in terms of the database's annotations. One example of this kind of method is the Neurosynth-based decoding available on Neurovault. In that method, the map you want to decode is correlated with Neurosynth term-specific meta-analysis maps. You end up with one correlation coefficient for each term in Neurosynth. Users generally report the top ten or so terms.
+
+Encoding methods do the opposite- they take in annotations or raw text and produce a synthesized brain map. One example of a meta-analytic encoding tool is [NeuroQuery](https://neuroquery.org/).
+
+```python
+
+```
+
+# Exercise: Run a MACM and Decode an ROI
+
+
+First, we have to prepare some things for the exercise. You just need to run these cells without editing anything.
 
 ```python
 ROI_FILE = op.join(DATA_DIR, "amygdala_roi.nii.gz")
@@ -401,6 +425,8 @@ plotting.plot_roi(
 # Given the sheer size of Neurosynth, we will only use the first 500 studies in this exercise
 ns_dset = ns_dset.slice(ns_dset.ids[:500])
 ```
+
+Below, try to write code in each cell based on its comment.
 
 ```python
 # First, use the Dataset class's get_studies_by_mask method
