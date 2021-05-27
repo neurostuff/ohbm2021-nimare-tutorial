@@ -13,6 +13,7 @@ jupyter:
     name: python3
 ---
 
+<!-- #region -->
 # OHBM 2021 NiMARE tutorial
 
 ## What is NiMARE?
@@ -31,17 +32,48 @@ There are already a number of tools for neuroimaging meta-analysis:
 | <a href="https://www.sdmproject.com"><img src="images/sdm_logo.png" alt="SDM" width="200"/></a> | The Seed-based _d_ Mapping (SDM) app provides a graphical user interface and SPM toolbox for performing meta-analyses with the SDM algorithm, which supports a mix of coordinates and images. |
 | <a href="https://github.com/canlab/Canlab_MKDA_MetaAnalysis"><img src="images/mkda_logo.png" alt="MKDA" width="200"/></a> | The MATLAB-based MKDA toolbox includes functions for performing coordinate-based meta-analyses with the MKDA algorithm. |
 
-The majority of the above tools are (1) closed source, (2) based on graphical user interfaces, and/or (3) written in a programming language that is rarely used by neuroimagers, such as C++.
+The majority of the above tools are (1) closed source, (2) based on graphical user interfaces, and/or (3) written in a programming language that is rarely used by neuroimagers, such as Java. 
 
-## Goals for this tutorial
+In addition to these established tools, there are always interesting new methods that are described in journal articles, but which are never translated to a well-documented and supported implementation.
+
+NiMARE attempts to consolidate the different algorithms that are currently spread out across a range of tools (or which never make the jump from paper to tool), while still ensuring that the original tools and papers can be cited appropriately.
+
+## NiMARE's design philosophy
+
+NiMARE's API is designed to be similar to that of [`scikit-learn`](https://scikit-learn.org/stable/), in that most tools are custom classes. These classes follow the following basic structure:
+
+1. Initialize the class with general parameters
+```python
+cls = Class(param1, param2)
+```
+
+2. For Estimator classes, apply a `fit` method to a `Dataset` object to generate a `MetaResult` object
+```python
+result = cls.fit(dataset)
+```
+
+3. For Transformer classes, apply a `transform` method to an object to return a transformed version of that object
+
+    - An example transformer that accepts a `Dataset`:
+```python
+dataset = cls.transform(dataset)
+```
+    - A transformer that accepts a `MetaResult`:
+```python
+result = cls.transform(result)
+```
+
+## Stability and consistency
+
+NiMARE is currently in alpha development, so we appreciate any feedback or bug reports users can provide.
+<!-- #endregion -->
+
+# Goals for this tutorial
 
 1. Working with NiMARE meta-analytic datasets
 1. Searching large datasets
 1. Performing coordinate-based meta-analyses
 1. Performing image-based meta-analyses
-
-
-# MKDA Toolbox
 
 ```python
 # Import the packages we'll need for this tutorial
@@ -416,14 +448,41 @@ Functional decoding refers to approaches which attempt to infer mental processes
 
 In NiMARE, we group decoding methods into three general types: discrete decoding, continuous decoding, and encoding.
 
-Discrete decoding methods use a meta-analytic database and annotations of studies in that database to describe something discrete (like a region of interest) in terms of those annotations.
+- **Discrete decoding methods** use a meta-analytic database and annotations of studies in that database to describe something discrete (like a region of interest) in terms of those annotations.
 
-Continuous decoding methods use the same type of database to describe an unthresholded brain map in terms of the database's annotations. One example of this kind of method is the Neurosynth-based decoding available on Neurovault. In that method, the map you want to decode is correlated with Neurosynth term-specific meta-analysis maps. You end up with one correlation coefficient for each term in Neurosynth. Users generally report the top ten or so terms.
+- **Continuous decoding methods** use the same type of database to describe an unthresholded brain map in terms of the database's annotations. One example of this kind of method is the Neurosynth-based decoding available on Neurovault. In that method, the map you want to decode is correlated with Neurosynth term-specific meta-analysis maps. You end up with one correlation coefficient for each term in Neurosynth. Users generally report the top ten or so terms.
 
-Encoding methods do the opposite- they take in annotations or raw text and produce a synthesized brain map. One example of a meta-analytic encoding tool is [NeuroQuery](https://neuroquery.org/).
+- **Encoding methods** do the opposite- they take in annotations or raw text and produce a synthesized brain map. One example of a meta-analytic encoding tool is [NeuroQuery](https://neuroquery.org/).
+
+
+Most of the continuous decoding methods available in NiMARE are too computationally intensive and time-consuming for Binder, so we will focus on discrete decoding methods.
+The two most useful discrete decoders in NiMARE are the [`BrainMapDecoder`](https://nimare.readthedocs.io/en/latest/generated/nimare.decode.discrete.BrainMapDecoder.html#nimare.decode.discrete.BrainMapDecoder) and the [`NeurosynthDecoder`](https://nimare.readthedocs.io/en/latest/generated/nimare.decode.discrete.NeurosynthDecoder.html#nimare.decode.discrete.NeurosynthDecoder). Detailed descriptions of the two approaches are available in [NiMARE's documentation](https://nimare.readthedocs.io/en/latest/methods/decoding.html#discrete-decoding), but here's the basic idea:
+
+0. A NiMARE `Dataset` must contain both annotations/labels and coordinates.
+1. A subset of studies in the `Dataset` must be selected according to some criterion, such as having at least one peak in a region of interest or having a specific label.
+2. The algorithm then compares the frequency of each label within the selected subset of studies against the frequency of other labels in that subset to calculate "forward-inference" posterior probability, p-value, and z-statistic.
+3. The algorithm also compares the frequency of each label within the subset of studies against the the frequency of that label in the *unselected* studies from the `Dataset` to calculate "reverse-inference" posterior probability, p-value, and z-statistic.
 
 ```python
+# Given the sheer size of Neurosynth, we will only use the first 500 studies in this example
+ns_dset = ns_dset.slice(ns_dset.ids[:500])
 
+label_ids = ns_dset.get_studies_by_label("Neurosynth_TFIDF__amygdala", label_threshold=0.001)
+print(f"There are {len(label_ids)} studies in the Dataset with the 'Neurosynth_TFIDF__amygdala' label.")
+```
+
+```python
+decoder = nimare.decode.discrete.BrainMapDecoder(correction=None)
+decoder.fit(ns_dset)
+decoded_df = decoder.transform(ids=label_ids)
+decoded_df.sort_values(by="probReverse", ascending=False).head()
+```
+
+```python
+decoder = nimare.decode.discrete.NeurosynthDecoder(correction=None)
+decoder.fit(ns_dset)
+decoded_df = decoder.transform(ids=label_ids)
+decoded_df.sort_values(by="probReverse", ascending=False).head()
 ```
 
 # Exercise: Run a MACM and Decode an ROI
@@ -439,11 +498,6 @@ plotting.plot_roi(
     title="Anterior Cingular Gyrus",
     draw_cross=False,
 )
-```
-
-```python
-# Given the sheer size of Neurosynth, we will only use the first 500 studies in this exercise
-ns_dset = ns_dset.slice(ns_dset.ids[:500])
 ```
 
 Below, try to write code in each cell based on its comment.
@@ -483,8 +537,4 @@ roi_dataframe
 
 ```python
 roi_dataframe.sort_values(by="pReverse", ascending=True).head(10)
-```
-
-```python
-
 ```
