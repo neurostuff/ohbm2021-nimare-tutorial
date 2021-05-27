@@ -17,7 +17,21 @@ jupyter:
 
 ## What is NiMARE?
 
-[NiMARE](https://nimare.readthedocs.io/en/latest/) is a Python library for performing neuroimaging meta-analyses and related analyses, like automated annotation and functional decoding.
+![NiMARE banner](images/nimare_banner.png)
+
+[NiMARE](https://nimare.readthedocs.io/en/latest/) is a Python library for performing neuroimaging meta-analyses and related analyses, like automated annotation and functional decoding. The goal of NiMARE is to centralize and standardize implementations of common meta-analytic tools, so that researchers can use whatever tool is most appropriate for a given research question.
+
+There are already a number of tools for neuroimaging meta-analysis:
+
+| <h2>Tool</h2> | <h2>Scope</h2> |
+| :------------ | :------------- |
+| <a href="https://brainmap.org"><img src="images/brainmap_logo.png" alt="BrainMap" width="400"/></a> | BrainMap includes a suite of applications for (1) searching its manually-annotated coordinate-based database, (2) adding studies to the database, and (3) running ALE meta-analyses. While search results can be extracted using its Sleuth app, access to the full database requires a collaborative use agreement. |
+| <a href="https://brainmap.org"><img src="images/neurosynth_logo.png" alt="Neurosynth" width="200"/></a> | Neurosynth provides (1) a large, automatically-extracted coordinate-based database, (2) a website for performing large-scale automated meta-analyses, and (3) a Python library for performing meta-analyses and functional decoding, mostly relying on a version of the MKDA algorithm. The Python library has been deprecated in favor of `NiMARE`. |
+| <a href="https://www.neurovault.org"><img src="images/neurovault_logo.png" alt="Neurovault" width="200"/></a> | Neurovault is a repository for sharing unthresholded statistical images, which can be used to search for images to use in image-based meta-analyses. Neurovault provides a tool for basic meta-analyses and an integration with Neurosynth's database for online functional decoding. |
+| <a href="https://www.sdmproject.com"><img src="images/sdm_logo.png" alt="SDM" width="200"/></a> | The Seed-based _d_ Mapping (SDM) app provides a graphical user interface and SPM toolbox for performing meta-analyses with the SDM algorithm, which supports a mix of coordinates and images. |
+| <a href="https://github.com/canlab/Canlab_MKDA_MetaAnalysis"><img src="images/mkda_logo.png" alt="MKDA" width="200"/></a> | The MATLAB-based MKDA toolbox includes functions for performing coordinate-based meta-analyses with the MKDA algorithm. |
+
+The majority of the above tools are (1) closed s
 
 ## Goals for this tutorial
 
@@ -25,6 +39,9 @@ jupyter:
 1. Searching large datasets
 1. Performing coordinate-based meta-analyses
 1. Performing image-based meta-analyses
+
+
+# MKDA Toolbox
 
 ```python
 # Import the packages we'll need for this tutorial
@@ -267,6 +284,7 @@ plotting.plot_stat_map(
     mc_results.get_map("z_level-cluster_corr-FWE_method-montecarlo"),
     draw_cross=False,
     cut_coords=[0, 0, 0],
+    vmax=3,
 )
 ```
 
@@ -353,6 +371,7 @@ plotting.plot_stat_map(
     mc_results.get_map("z_level-voxel_corr-FWE_method-montecarlo"),
     draw_cross=False,
     cut_coords=[0, 0, 0],
+    vmax=3,
 )
 ```
 
@@ -367,7 +386,8 @@ reporting.get_clusters_table(
 
 ## Compare to results from the SPM IBMA extension
 
-![image.png](attachment:image.png)
+![IBMA comparison](images/ibma_comparison.png)
+
 Adapted from [Maumet & Nichols (2014)](https://www.frontiersin.org/10.3389/conf.fninf.2014.18.00025/event_abstract).
 
 ```python
