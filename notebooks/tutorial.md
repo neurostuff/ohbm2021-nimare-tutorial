@@ -475,14 +475,14 @@ print(f"There are {len(label_ids)} studies in the Dataset with the 'Neurosynth_T
 decoder = nimare.decode.discrete.BrainMapDecoder(correction=None)
 decoder.fit(ns_dset)
 decoded_df = decoder.transform(ids=label_ids)
-decoded_df.sort_values(by="probReverse", ascending=False).head()
+decoded_df.sort_values(by="probReverse", ascending=False).head(10)
 ```
 
 ```python
 decoder = nimare.decode.discrete.NeurosynthDecoder(correction=None)
 decoder.fit(ns_dset)
 decoded_df = decoder.transform(ids=label_ids)
-decoded_df.sort_values(by="probReverse", ascending=False).head()
+decoded_df.sort_values(by="probReverse", ascending=False).head(10)
 ```
 
 # Exercise: Run a MACM and Decode an ROI
