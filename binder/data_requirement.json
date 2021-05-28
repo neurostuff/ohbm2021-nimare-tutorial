@@ -1,6 +1,5 @@
 {
     "src": "https://osf.io/u9sqa/",
     "dst": "./data",
-    "projectName": "nimare_tutorial",
-    "recursive": true
+    "projectName": "nimare_tutorial"
 }
