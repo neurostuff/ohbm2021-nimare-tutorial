@@ -5,14 +5,19 @@
 
 Materials for the OHBM 2021 NiMARE tutorial
 
+## To run this tutorial on Binder
+
+### 1. Follow the Binder badge above
+
+### 2. Run the notebook
 
 ## To run this tutorial locally
 
 ### 0. Requirements
-You must have git, Python3, and bash. 
+You must have git, Python3, and bash.
 
 
-### 1. Clone this repo 
+### 1. Clone this repo
 In a bash terminal, type
 ```
 git clone https://github.com/neurostuff/ohbm2021-nimare-tutorial.git
@@ -28,7 +33,7 @@ pip install -r binder/requirements.txt
 ```
 ### 3. Open the notebook
 ```bash
-jupyter notebook 
+jupyter notebook
 ```
 When the Jupyter Notebook page opens in your browser, navigate to `notebooks/tutorial.ipynb`
 

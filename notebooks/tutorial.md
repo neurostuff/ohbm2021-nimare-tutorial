@@ -13,26 +13,6 @@ jupyter:
     name: python3
 ---
 
-### Before we start, let's start downloading the data
-
-The code in the following cell checks whether you have the [data](https://osf.io/u9sqa/), and if you don't, it starts downloading it. 
-
-If you're running this notebook locally or using mybinder, then you will need to download the data. 
-
-If you're running it using binder hosted on neurolibre, then you already have access to the data on neurolibre. 
-
-```bash
-DIR=$"../data/nimare_tutorial/"
-if [ -d "$DIR" ]; then
-    echo "$DIR exists."
-else 
-    mkdir -p $DIR;
-    pip install osfclient
-    osf -p u9sqa clone  $DIR;
-    echo "Created $DIR and downloaded the data";
-fi
-```
-
 <!-- #region -->
 # OHBM 2021 NiMARE tutorial
 
@@ -97,6 +77,28 @@ Usage questions can be submitted to [Neurostars with the 'nimare' tag](https://n
 1. Performing coordinate-based meta-analyses
 1. Performing image-based meta-analyses
 1. Performing functional decoding using Neurosynth
+
+<!-- #region -->
+# Before we start, let's download the necessary data **only** if running locally
+
+The code in the following cell checks whether you have the [data](https://osf.io/u9sqa/), and if you don't, it starts downloading it. 
+
+If you're running this notebook locally or using mybinder, then you will need to download the data. You can copy the code below into a new cell, with the Jupyter magic command `%%bash` at the top of the cell.
+
+If you're running it using binder hosted on neurolibre, then you already have access to the data on neurolibre, and you don't need to run this code snippet.
+
+```bash
+DIR=$"../data/nimare_tutorial/"
+if [ -d "$DIR" ]; then
+    echo "$DIR exists."
+else 
+    mkdir -p $DIR;
+    pip install osfclient
+    osf -p u9sqa clone  $DIR;
+    echo "Created $DIR and downloaded the data";
+fi
+```
+<!-- #endregion -->
 
 ```python
 # Import the packages we'll need for this tutorial
