@@ -490,6 +490,10 @@ decoded_df.sort_values(by="probReverse", ascending=False).head(10)
 
 # Exercise: Run a MACM and Decode an ROI
 
+Remember that a MACM is a meta-analysis performed on studies which report at least one peak within a region of interest. This type of analysis is generally interpreted as a meta-analytic version of functional connectivity analysis.
+
+We will use an anterior cingulate cortex mask as our ROI, which we will use to (1) run a MACM using the (reduced) Neurosynth dataset and (2) decode the ROI using labels from Neurosynth.
+
 
 First, we have to prepare some things for the exercise. You just need to run these cells without editing anything.
 
