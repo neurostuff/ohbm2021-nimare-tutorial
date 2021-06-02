@@ -13,6 +13,26 @@ jupyter:
     name: python3
 ---
 
+### Before we start, let's start downloading the data
+
+The code in the following cell checks whether you have the [data](https://osf.io/u9sqa/), and if you don't, it starts downloading it. 
+
+If you're running this notebook locally or using mybinder, then you will need to download the data. 
+
+If you're running it using binder hosted on neurolibre, then you already have access to the data on neurolibre. 
+
+```bash
+DIR=$"../data/nimare_tutorial/"
+if [ -d "$DIR" ]; then
+    echo "$DIR exists."
+else 
+    mkdir -p $DIR;
+    pip install osfclient
+    osf -p u9sqa clone  $DIR;
+    echo "Created $DIR and downloaded the data";
+fi
+```
+
 <!-- #region -->
 # OHBM 2021 NiMARE tutorial
 
