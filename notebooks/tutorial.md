@@ -512,36 +512,22 @@ Below, try to write code in each cell based on its comment.
 ```python
 # First, use the Dataset class's get_studies_by_mask method
 # to identify studies with at least one coordinate in the ROI.
-roi_studies = ns_dset.get_studies_by_mask(ROI_FILE)
-print(len(roi_studies))
 ```
 
 ```python
 # Now, create a reduced version of the Dataset including only
 # studies identified above.
-roi_dset = ns_dset.slice(roi_studies)
 ```
 
 ```python
 # Next, run a meta-analysis on the reduced ROI dataset.
 # This is a MACM.
-macm = nimare.meta.cbma.ale.ALE(kernel__sample_size=20)
-macm.fit(roi_dset)
-plotting.plot_stat_map(macm.results.get_map("z"))
 ```
 
 ```python
 # Initialize, fit, and transform a Neurosynth Decoder.
-decoder = nimare.decode.discrete.NeurosynthDecoder()
-decoder.fit(ns_dset)
-roi_dataframe = decoder.transform(ids=roi_studies)
 ```
 
 ```python
 # Show the results
-roi_dataframe
-```
-
-```python
-roi_dataframe.sort_values(by="pReverse", ascending=True).head(10)
 ```
