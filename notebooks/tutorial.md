@@ -514,7 +514,7 @@ decoded_df.sort_values(by="probReverse", ascending=False).head(10)
 
 Remember that a MACM is a meta-analysis performed on studies which report at least one peak within a region of interest. This type of analysis is generally interpreted as a meta-analytic version of functional connectivity analysis.
 
-We will use an anterior cingulate cortex mask as our ROI, which we will use to (1) run a MACM using the (reduced) Neurosynth dataset and (2) decode the ROI using labels from Neurosynth.
+We will use an amygdala mask as our ROI, which we will use to (1) run a MACM using the (reduced) Neurosynth dataset and (2) decode the ROI using labels from Neurosynth.
 
 
 First, we have to prepare some things for the exercise. You just need to run these cells without editing anything.
@@ -524,7 +524,7 @@ ROI_FILE = op.join(DATA_DIR, "amygdala_roi.nii.gz")
 
 plotting.plot_roi(
     ROI_FILE,
-    title="Anterior Cingular Gyrus",
+    title="Right Amygdala",
     draw_cross=False,
 )
 ```
@@ -544,12 +544,30 @@ Below, try to write code in each cell based on its comment.
 ```python
 # Next, run a meta-analysis on the reduced ROI dataset.
 # This is a MACM.
+# Use the nimare.meta.cbma.MKDADensity meta-analytic estimator.
 ```
 
 ```python
 # Initialize, fit, and transform a Neurosynth Decoder.
 ```
 
-```python
-# Show the results
-```
+## After the exercise
+
+Your MACM results should look something like this:
+
+![MACM Results](images/macm_result.png)
+
+And your decoding results should look something like this, after sorting by probReverse:
+
+| Term                            |     pForward |   zForward |   probForward |    pReverse |   zReverse |   probReverse |
+|:--------------------------------|-------------:|-----------:|--------------:|------------:|-----------:|--------------:|
+| Neurosynth_TFIDF__amygdala      | 4.14379e-113 |  22.602    |      0.2455   | 1.17242e-30 |   11.5102  |      0.964733 |
+| Neurosynth_TFIDF__reinforcement | 7.71236e-05  |   3.95317  |      0.522177 | 7.35753e-15 |    7.77818 |      0.957529 |
+| Neurosynth_TFIDF__olfactory     | 0.0147123    |   2.43938  |      0.523139 | 5.84089e-11 |    6.54775 |      0.955769 |
+| Neurosynth_TFIDF__fear          | 1.52214e-11  |   6.74577  |      0.448855 | 6.41482e-19 |    8.88461 |      0.95481  |
+| Neurosynth_TFIDF__age sex       | 0.503406     |   0.669141 |      0.524096 | 3.8618e-07  |    5.07565 |      0.954023 |
+| Neurosynth_TFIDF__appraisal     | 0.503406     |   0.669141 |      0.524096 | 3.8618e-07  |    5.07565 |      0.954023 |
+| Neurosynth_TFIDF__apart         | 0.503406     |   0.669141 |      0.524096 | 3.8618e-07  |    5.07565 |      0.954023 |
+| Neurosynth_TFIDF__naturalistic  | 0.555471     |   0.589582 |      0.52505  | 0.00122738  |    3.23244 |      0.95229  |
+| Neurosynth_TFIDF__controls hc   | 0.555471     |   0.589582 |      0.52505  | 0.00122738  |    3.23244 |      0.95229  |
+| Neurosynth_TFIDF__morphology    | 0.555471     |   0.589582 |      0.52505  | 0.00122738  |    3.23244 |      0.95229  |
