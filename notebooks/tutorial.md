@@ -358,22 +358,15 @@ pain_dset.images
 
 Note that "z" images are missing for some, but not all, of the studies.
 
-NiMARE's `transforms` module contains a function, `transform_images`, which can generate images from other images- as long as the right images and metadata are available. In this case, it can generate z-statistic images from t-statistic maps, combined with sample size information in the metadata. It can also generate "varcope" (contrast variance) images from the contrast standard error images.
+NiMARE's `transforms` module contains a class, `ImageTransformer`, which can generate images from other images- as long as the right images and metadata are available. In this case, it can generate z-statistic images from t-statistic maps, combined with sample size information in the metadata. It can also generate "varcope" (contrast variance) images from the contrast standard error images.
 
 ```python
 # Calculate missing images
-pain_dset.images = nimare.transforms.transform_images(
-    pain_dset.images,
-    target="z",
-    masker=pain_dset.masker,
-    metadata_df=pain_dset.metadata,
-)
-pain_dset.images = nimare.transforms.transform_images(
-    pain_dset.images,
-    target="varcope",
-    masker=pain_dset.masker,
-    metadata_df=pain_dset.metadata,
-)
+z_transformer = nimare.transforms.ImageTransformer(target="z", overwrite=False)
+pain_dset = z_transformer.transform(pain_dset)
+
+varcope_transformer = nimare.transforms.ImageTransformer(target="varcope", overwrite=False)
+pain_dset = varcope_transformer.transform(pain_dset)
 ```
 
 ```python
@@ -545,6 +538,7 @@ Below, try to write code in each cell based on its comment.
 # Next, run a meta-analysis on the reduced ROI dataset.
 # This is a MACM.
 # Use the nimare.meta.cbma.MKDADensity meta-analytic estimator.
+# Do not perform multiple comparisons correction.
 ```
 
 ```python
