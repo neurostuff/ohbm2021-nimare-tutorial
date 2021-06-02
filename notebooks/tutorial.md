@@ -65,7 +65,9 @@ result = cls.transform(result)
 
 ## Stability and consistency
 
-NiMARE is currently in alpha development, so we appreciate any feedback or bug reports users can provide.
+NiMARE is currently in alpha development, so we appreciate any feedback or bug reports users can provide. Given its status, NiMARE's API may change in the future.
+
+Usage questions can be submitted to [Neurostars with the 'nimare' tag](https://neurostars.org/tag/nimare), while bug reports and feature requests can be submitted to [NiMARE's issue tracker](https://github.com/neurostuff/NiMARE/issues).
 <!-- #endregion -->
 
 # Goals for this tutorial
@@ -74,6 +76,7 @@ NiMARE is currently in alpha development, so we appreciate any feedback or bug r
 1. Searching large datasets
 1. Performing coordinate-based meta-analyses
 1. Performing image-based meta-analyses
+1. Performing functional decoding using Neurosynth
 
 ```python
 # Import the packages we'll need for this tutorial
