@@ -1,5 +1,5 @@
 nimare==0.0.9rc2
-matplotlib~=3.4.2
+matplotlib==3.3.4
 duecredit==0.9.1
 jupyter==1.0.0
 osfclient==0.0.3
