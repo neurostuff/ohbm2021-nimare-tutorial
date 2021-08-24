@@ -6,7 +6,7 @@ jupyter:
       extension: .md
       format_name: markdown
       format_version: '1.3'
-      jupytext_version: 1.11.2
+      jupytext_version: 1.10.3
   kernelspec:
     display_name: Python 3
     language: python
@@ -210,12 +210,12 @@ ns_dset = nimare.io.convert_neurosynth_to_dataset(
 
 ```python
 ns_dset = nimare.dataset.Dataset.load(op.join(DATA_DIR, "neurosynth_dataset.pkl.gz"))
-print(f"There are {len(ns_dset.ids)} studies in the Neurosynth database.")
+print(ns_dset)
 ```
 
 ```python
 sleuth_dset = nimare.io.convert_sleuth_to_dataset(op.join(DATA_DIR, "sleuth_dataset.txt"))
-print(f"There are {len(sleuth_dset.ids)} studies in this dataset.")
+print(sleuth_dset)
 ```
 
 ## Searching large datasets
@@ -229,7 +229,7 @@ The `slice` method creates a reduced `Dataset` from a list of IDs.
 ```python
 pain_ids = ns_dset.get_studies_by_label("Neurosynth_TFIDF__pain", label_threshold=0.001)
 ns_pain_dset = ns_dset.slice(pain_ids)
-print(f"There are {len(pain_ids)} studies labeled with 'pain'.")
+print(ns_pain_dset)
 ```
 
 A MACM (meta-analytic coactivation modeling) analysis is generally performed by running a meta-analysis on studies with a peak in a region of interest, so Dataset includes two methods for searching based on the locations of coordinates: `Dataset.get_studies_by_coordinate` and `Dataset.get_studies_by_mask`.
@@ -237,7 +237,7 @@ A MACM (meta-analytic coactivation modeling) analysis is generally performed by 
 ```python
 sphere_ids = ns_dset.get_studies_by_coordinate([[24, -2, -20]], r=6)
 sphere_dset = ns_dset.slice(sphere_ids)
-print(f"There are {len(sphere_ids)} studies with at least one peak within 6mm of [24, -2, -20].")
+print(sphere_dset)
 ```
 
 # Running meta-analyses
@@ -288,7 +288,7 @@ meta_results = meta.fit(pain_dset)
 ```
 
 ```python
-print(type(meta_results))
+print(meta_results)
 ```
 
 ```python
@@ -378,7 +378,7 @@ Now that we have all of the image types we will need for our meta-analyses, we c
 The `DerSimonianLaird` method uses "beta" and "varcope" images, and estimates between-study variance (a.k.a. $\tau^2$).
 
 ```python
-meta = nimare.meta.ibma.DerSimonianLaird()
+meta = nimare.meta.ibma.DerSimonianLaird(resample=True)
 meta_results = meta.fit(pain_dset)
 ```
 
@@ -393,7 +393,7 @@ plotting.plot_stat_map(
 The `PermutedOLS` method uses z-statistic images, and relies on [nilearn's `permuted_ols`](https://nilearn.github.io/modules/generated/nilearn.mass_univariate.permuted_ols.html) tool.
 
 ```python
-meta = nimare.meta.ibma.PermutedOLS()
+meta = nimare.meta.ibma.PermutedOLS(resample=True)
 meta_results = meta.fit(pain_dset)
 ```
 
@@ -503,65 +503,17 @@ decoded_df = decoder.transform(ids=label_ids)
 decoded_df.sort_values(by="probReverse", ascending=False).head(10)
 ```
 
-# Exercise: Run a MACM and Decode an ROI
+In addition to the two above decoders, we have an `ROIAssociationDecoder`, which does the following:
 
-Remember that a MACM is a meta-analysis performed on studies which report at least one peak within a region of interest. This type of analysis is generally interpreted as a meta-analytic version of functional connectivity analysis.
-
-We will use an amygdala mask as our ROI, which we will use to (1) run a MACM using the (reduced) Neurosynth dataset and (2) decode the ROI using labels from Neurosynth.
-
-
-First, we have to prepare some things for the exercise. You just need to run these cells without editing anything.
+1. Generate modeled activation (MA) maps for all studies in Dataset.
+1. Average MA values within user-provided mask to get study-wise MA regressor.
+1. Correlate MA regressor with study-wise annotation values (e.g., tf-idf values).
 
 ```python
-ROI_FILE = op.join(DATA_DIR, "amygdala_roi.nii.gz")
-
-plotting.plot_roi(
-    ROI_FILE,
-    title="Right Amygdala",
-    draw_cross=False,
+decoder = nimare.decode.discrete.ROIAssociationDecoder(
+    masker=op.join(DATA_DIR, "amygdala_roi.nii.gz")
 )
+decoder.fit(ns_dset)
+decoded_df = decoder.transform()
+decoded_df.sort_values(by="r", ascending=False).head(10)
 ```
-
-Below, try to write code in each cell based on its comment.
-
-```python
-# First, use the Dataset class's get_studies_by_mask method
-# to identify studies with at least one coordinate in the ROI.
-```
-
-```python
-# Now, create a reduced version of the Dataset including only
-# studies identified above.
-```
-
-```python
-# Next, run a meta-analysis on the reduced ROI dataset.
-# This is a MACM.
-# Use the nimare.meta.cbma.MKDADensity meta-analytic estimator.
-# Do not perform multiple comparisons correction.
-```
-
-```python
-# Initialize, fit, and transform a Neurosynth Decoder.
-```
-
-## After the exercise
-
-Your MACM results should look something like this:
-
-![MACM Results](images/macm_result.png)
-
-And your decoding results should look something like this, after sorting by probReverse:
-
-| Term                            |     pForward |   zForward |   probForward |    pReverse |   zReverse |   probReverse |
-|:--------------------------------|-------------:|-----------:|--------------:|------------:|-----------:|--------------:|
-| Neurosynth_TFIDF__amygdala      | 4.14379e-113 |  22.602    |      0.2455   | 1.17242e-30 |   11.5102  |      0.964733 |
-| Neurosynth_TFIDF__reinforcement | 7.71236e-05  |   3.95317  |      0.522177 | 7.35753e-15 |    7.77818 |      0.957529 |
-| Neurosynth_TFIDF__olfactory     | 0.0147123    |   2.43938  |      0.523139 | 5.84089e-11 |    6.54775 |      0.955769 |
-| Neurosynth_TFIDF__fear          | 1.52214e-11  |   6.74577  |      0.448855 | 6.41482e-19 |    8.88461 |      0.95481  |
-| Neurosynth_TFIDF__age sex       | 0.503406     |   0.669141 |      0.524096 | 3.8618e-07  |    5.07565 |      0.954023 |
-| Neurosynth_TFIDF__appraisal     | 0.503406     |   0.669141 |      0.524096 | 3.8618e-07  |    5.07565 |      0.954023 |
-| Neurosynth_TFIDF__apart         | 0.503406     |   0.669141 |      0.524096 | 3.8618e-07  |    5.07565 |      0.954023 |
-| Neurosynth_TFIDF__naturalistic  | 0.555471     |   0.589582 |      0.52505  | 0.00122738  |    3.23244 |      0.95229  |
-| Neurosynth_TFIDF__controls hc   | 0.555471     |   0.589582 |      0.52505  | 0.00122738  |    3.23244 |      0.95229  |
-| Neurosynth_TFIDF__morphology    | 0.555471     |   0.589582 |      0.52505  | 0.00122738  |    3.23244 |      0.95229  |
