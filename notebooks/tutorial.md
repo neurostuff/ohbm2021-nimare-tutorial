@@ -20,7 +20,7 @@ jupyter:
 
 ![NiMARE banner](images/nimare_banner.png)
 
-[NiMARE](https://nimare.readthedocs.io/en/latest/) is a Python library for performing neuroimaging meta-analyses and related analyses, like automated annotation and functional decoding. The goal of NiMARE is to centralize and standardize implementations of common meta-analytic tools, so that researchers can use whatever tool is most appropriate for a given research question.
+[NiMARE](https://nimare.readthedocs.io/en/0.0.12/) is a Python library for performing neuroimaging meta-analyses and related analyses, like automated annotation and functional decoding. The goal of NiMARE is to centralize and standardize implementations of common meta-analytic tools, so that researchers can use whatever tool is most appropriate for a given research question.
 
 There are already a number of tools for neuroimaging meta-analysis:
 
@@ -116,7 +116,7 @@ NiMARE datasets typically come from one of three formats:
 
 ## Sleuth text files
 
-BrainMap users search for papers in the Sleuth app, which can output a text file.
+BrainMap users search for papers in the Sleuth app, which can output a text file. This text file can be used by BrainMap's GingerALE tool, as well as by NiMARE.
 
 The example file we will use is from [Laird et al. (2015)](https://doi.org/10.1016/j.neuroimage.2015.06.044), which analyzed face paradigms.
 
@@ -174,7 +174,7 @@ For this tutorial, we will use a pre-generated Dataset object containing the fir
 <!-- #endregion -->
 
 ```python
-neurosynth_dset = nimare.dataset.Dataset.load("neurosynth_dataset.pkl.gz")
+neurosynth_dset = nimare.dataset.Dataset.load(os.path.join(DATA_DIR, "neurosynth_dataset.pkl.gz"))
 print(neurosynth_dset)
 ```
 
@@ -235,12 +235,18 @@ nimads_dset.annotations.head()
 ```
 
 ```python
+# The faces Dataset doesn't have any annotations, but the Neurosynth one does
+neurosynth_dset.annotations.head()
+```
+
+```python
+# None of the example Datasets have texts
 nimads_dset.texts.head()
 ```
 
 Other relevant attributes are `Dataset.masker` and `Dataset.space`.
 
-`Dataset.masker` is a [nilearn Masker object](https://nilearn.github.io/manipulating_images/masker_objects.html#), which specifies the manner in which voxel-wise information like peak coordinates and statistical images are mapped into usable arrays. Most meta-analytic tools within NiMARE accept a `masker` argument, so the Dataset's masker can be overridden in most cases.
+`Dataset.masker` is a [nilearn Masker object](https://nilearn.github.io/stable/manipulating_images/masker_objects.html#), which specifies the manner in which voxel-wise information like peak coordinates and statistical images are mapped into usable arrays. Most meta-analytic tools within NiMARE accept a `masker` argument, so the Dataset's masker can be overridden in most cases.
 
 `Dataset.space` is just a string describing the standard space and resolution in which data within the Dataset are stored.
 
@@ -297,7 +303,7 @@ NiMARE implements multiple coordinate-based meta-analysis methods, including ALE
 
 Meta-analytic Estimators are initialized with parameters which determine how the Estimator will be run. For example, ALE accepts a kernel transformer (which defaults to the standard `ALEKernel`), a null method, the number of iterations used to define the null distribution, and the number of cores to be used during fitting.
 
-The Estimators also have a `fit` method, which accepts a `Dataset` object and returns a `MetaResult` object. [`MetaResult`s](https://nimare.readthedocs.io/en/latest/generated/nimare.results.MetaResult.html#nimare.results.MetaResult) link statistical image names to numpy arrays, and can be used to produce nibabel images from those arrays, as well as save the images to files.
+The Estimators also have a `fit` method, which accepts a `Dataset` object and returns a `MetaResult` object. [`MetaResult`s](https://nimare.readthedocs.io/en/0.0.12/generated/nimare.results.MetaResult.html#nimare.results.MetaResult) link statistical image names to numpy arrays, and can be used to produce nibabel images from those arrays, as well as save the images to files.
 
 ```python
 meta = nimare.meta.cbma.ale.ALE(null_method="approximate")
@@ -329,7 +335,7 @@ plotting.plot_stat_map(
 
 ## Multiple comparisons correction
 
-Most of the time, you will want to follow up your meta-analysis with some form of multiple comparisons correction. For this, NiMARE provides Corrector classes in the `correct` module. Specifically, there are two Correctors: [`FWECorrector`](https://nimare.readthedocs.io/en/latest/generated/nimare.correct.FWECorrector.html) and [`FDRCorrector`](https://nimare.readthedocs.io/en/latest/generated/nimare.correct.FDRCorrector.html). In both cases, the Corrector supports a range of naive correction options relying on [`statsmodels`' methods](https://www.statsmodels.org/dev/generated/statsmodels.stats.multitest.multipletests.html).
+Most of the time, you will want to follow up your meta-analysis with some form of multiple comparisons correction. For this, NiMARE provides Corrector classes in the `correct` module. Specifically, there are two Correctors: [`FWECorrector`](https://nimare.readthedocs.io/en/0.0.12/generated/nimare.correct.FWECorrector.html) and [`FDRCorrector`](https://nimare.readthedocs.io/en/0.0.12/generated/nimare.correct.FDRCorrector.html). In both cases, the Corrector supports a range of naive correction options that are not optimized for neuroimaging data, like Bonferroni correction.
 
 In addition to generic multiple comparisons correction, the Correctors also reference algorithm-specific correction methods, such as the `montecarlo` method supported by most coordinate-based meta-analysis algorithms.
 
@@ -419,7 +425,7 @@ plotting.plot_stat_map(
 )
 ```
 
-The `PermutedOLS` method uses beta images, and relies on [nilearn's `permuted_ols`](https://nilearn.github.io/modules/generated/nilearn.mass_univariate.permuted_ols.html) tool.
+The `PermutedOLS` method uses beta images, and relies on [nilearn's `permuted_ols`](https://nilearn.github.io/stable/modules/generated/nilearn.mass_univariate.permuted_ols.html) tool.
 
 ```python
 meta = nimare.meta.ibma.PermutedOLS(resample=True)
@@ -463,19 +469,12 @@ reporting.get_clusters_table(
 )
 ```
 
-## Compare to results from the SPM IBMA extension
-
-![IBMA comparison](images/ibma_comparison.png)
-
-Adapted from [Maumet & Nichols (2014)](https://www.frontiersin.org/10.3389/conf.fninf.2014.18.00025/event_abstract).
-
 ```python
 plotting.plot_stat_map(
     mc_results.get_map("z_level-voxel_corr-FWE_method-montecarlo"),
     threshold=1.65,
     vmax=3,
     draw_cross=False,
-    cut_coords=[0, 0, 0],
 )
 ```
 
@@ -503,7 +502,7 @@ In NiMARE, we group decoding methods into three general types: discrete decoding
 
 
 Most of the continuous decoding methods available in NiMARE are too computationally intensive and time-consuming for Binder, so we will focus on discrete decoding methods.
-The two most useful discrete decoders in NiMARE are the [`BrainMapDecoder`](https://nimare.readthedocs.io/en/latest/generated/nimare.decode.discrete.BrainMapDecoder.html#nimare.decode.discrete.BrainMapDecoder) and the [`NeurosynthDecoder`](https://nimare.readthedocs.io/en/latest/generated/nimare.decode.discrete.NeurosynthDecoder.html#nimare.decode.discrete.NeurosynthDecoder). Detailed descriptions of the two approaches are available in [NiMARE's documentation](https://nimare.readthedocs.io/en/latest/methods/decoding.html#discrete-decoding), but here's the basic idea:
+The two most useful discrete decoders in NiMARE are the [`BrainMapDecoder`](https://nimare.readthedocs.io/en/0.0.12/generated/nimare.decode.discrete.BrainMapDecoder.html#nimare.decode.discrete.BrainMapDecoder) and the [`NeurosynthDecoder`](https://nimare.readthedocs.io/en/0.0.12/generated/nimare.decode.discrete.NeurosynthDecoder.html#nimare.decode.discrete.NeurosynthDecoder). Detailed descriptions of the two approaches are available in [NiMARE's documentation](https://nimare.readthedocs.io/en/0.0.12/decoding.html#discrete-decoding), but here's the basic idea:
 
 0. A NiMARE `Dataset` must contain both annotations/labels and coordinates.
 1. A subset of studies in the `Dataset` must be selected according to some criterion, such as having at least one peak in a region of interest or having a specific label.
@@ -528,6 +527,13 @@ decoder.fit(neurosynth_dset)
 decoded_df = decoder.transform(ids=label_ids)
 decoded_df.sort_values(by="probReverse", ascending=False).head(10)
 ```
+
+# NiMARE and the NeuroStore Ecosystem
+
+We are working on an online repository of both coordinates and images, drawn from Neurosynth, NeuroQuery, and NeuroVault. This repository will include the ability to curate collections of studies, annotate them, and run meta-analyses on them with NiMARE.
+
+![NeuroStore Ecosystem](images/ecosystem.png)
+
 
 # Exercise: Run a MACM and Decode an ROI
 
